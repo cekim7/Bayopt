@@ -106,9 +106,13 @@ func (gp *GP) Predict(Xstar [][]float64) ([]float64, []float64) {
 
 // Objective function
 func objective(x []float64) float64 {
-	// Let's maximize this function in 1D for visualization
-	v := x[0]
-	return -(v-2)*(v-2) + math.Sin(v*4)*2
+	// Simulate semiconductor process yield based on chamber temperature
+	t := x[0]
+	// Optimal temperature around 75C
+	baseYield := 95.0
+	penalty := 0.01 * (t - 75.0) * (t - 75.0)
+	noise := math.Sin((t-75.0)/3.0) * 2.0
+	return baseYield - penalty + noise
 }
 
 type AppState struct {
@@ -129,9 +133,9 @@ var globalState *AppState
 func (s *AppState) Reset() {
 	s.Lock()
 	defer s.Unlock()
-	s.ObsX = [][]float64{{0.0}}
+	s.ObsX = [][]float64{{20.0}}
 	s.ObsY = []float64{objective(s.ObsX[0])}
-	s.GP = NewGP(0.5, 3.0, 1e-2)
+	s.GP = NewGP(10.0, 20.0, 1e-1)
 	s.GP.Fit(s.ObsX, s.ObsY)
 	s.updateGrid()
 }
@@ -139,7 +143,8 @@ func (s *AppState) Reset() {
 func (s *AppState) updateGrid() {
 	grid := make([][]float64, 200)
 	for i := range grid {
-		grid[i] = []float64{-2.0 + float64(i)*6.0/199.0}
+		// Temperature bounds: 20 to 120 °C
+		grid[i] = []float64{20.0 + float64(i)*100.0/199.0}
 	}
 	s.GridX = grid
 	mean, std := s.GP.Predict(grid)
