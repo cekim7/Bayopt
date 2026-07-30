@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Optimization</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #222;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            background-color: #555;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #333;
+        }
+        #plot {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bayesian Optimization</h1>
+        <div class="controls">
+            <button onclick="step()">Next Iteration</button>
+            <button onclick="reset()">Reset</button>
+        </div>
+        <div id="plot"></div>
+    </div>
+
+    <script>
+        async function fetchState() {
+            const res = await fetch('/api/state');
+            const data = await res.json();
+            renderPlot(data);
+        }
+
+        async function step() {
+            const res = await fetch('/api/step', { method: 'POST' });
+            const data = await res.json();
+            renderPlot(data);
+        }
+
+        async function reset() {
+            const res = await fetch('/api/reset', { method: 'POST' });
+            const data = await res.json();
+            renderPlot(data);
+        }
+
+        function renderPlot(data) {
+            const gridX = data.gridX.map(x => x[0]);
+            const mean = data.mean;
+            const std = data.std;
+            const obsX = data.obsX.map(x => x[0]);
+            const obsY = data.obsY;
+            const acq = data.acq;
+
+            const upper = mean.map((m, i) => m + 2 * std[i]);
+            const lower = mean.map((m, i) => m - 2 * std[i]);
+
+            const traceMean = {
+                x: gridX,
+                y: mean,
+                mode: 'lines',
+                name: 'Mean',
+                line: { color: '#444', width: 2 }
+            };
+
+            const traceUpper = {
+                x: gridX,
+                y: upper,
+                mode: 'lines',
+                name: 'Upper Bound',
+                line: { width: 0 },
+                showlegend: false
+            };
+
+            const traceLower = {
+                x: gridX,
+                y: lower,
+                mode: 'lines',
+                name: 'Uncertainty',
+                fill: 'tonexty',
+                fillcolor: 'rgba(150, 150, 150, 0.3)',
+                line: { width: 0 }
+            };
+
+            const traceObs = {
+                x: obsX,
+                y: obsY,
+                mode: 'markers',
+                name: 'Observations',
+                marker: { color: '#111', size: 10, symbol: 'circle' }
+            };
+
+            const traceAcq = {
+                x: gridX,
+                y: acq,
+                mode: 'lines',
+                name: 'Acquisition (UCB)',
+                yaxis: 'y2',
+                line: { color: '#888', width: 2, dash: 'dash' }
+            };
+
+            const layout = {
+                title: 'Gaussian Process Surrogate',
+                plot_bgcolor: '#fafafa',
+                paper_bgcolor: '#fff',
+                font: { color: '#333' },
+                xaxis: { title: 'Parameter', gridcolor: '#eee' },
+                yaxis: { title: 'Objective Value', gridcolor: '#eee' },
+                yaxis2: {
+                    title: 'Acquisition Value',
+                    overlaying: 'y',
+                    side: 'right',
+                    showgrid: false
+                },
+                margin: { l: 50, r: 50, t: 50, b: 50 },
+                showlegend: true,
+                legend: { x: 0, y: 1.1, orientation: 'h' }
+            };
+
+            const plotData = [traceUpper, traceLower, traceMean, traceObs, traceAcq];
+            Plotly.newPlot('plot', plotData, layout);
+        }
+
+        // Initial fetch
+        fetchState();
+    </script>
+</body>
+</html>
