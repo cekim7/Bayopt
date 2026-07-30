@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bayesian Optimization</title>
+    <title>Semiconductor Process Optimization</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
         body {
@@ -54,7 +54,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Bayesian Optimization</h1>
+        <h1>Semiconductor Process Optimization</h1>
         <div class="controls">
             <button onclick="step()">Next Iteration</button>
             <button onclick="reset()">Reset</button>
@@ -141,8 +141,8 @@
                 plot_bgcolor: '#fafafa',
                 paper_bgcolor: '#fff',
                 font: { color: '#333' },
-                xaxis: { title: 'Parameter', gridcolor: '#eee' },
-                yaxis: { title: 'Objective Value', gridcolor: '#eee' },
+                xaxis: { title: 'Chamber Temperature (°C)', gridcolor: '#eee' },
+                yaxis: { title: 'Process Yield (%)', gridcolor: '#eee' },
                 yaxis2: {
                     title: 'Acquisition Value',
                     overlaying: 'y',
