@@ -60,6 +60,17 @@
             <button onclick="reset()">Reset</button>
         </div>
         <div id="plot"></div>
+        <div class="controls" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px;">
+            <input type="file" id="imageInput" accept="image/*">
+            <button onclick="uploadImage()">Upload Image</button>
+            <span id="imageResult"></span>
+        </div>
+        <div class="controls" style="margin-top: 10px;">
+            <input type="file" id="audioInput" accept="audio/*">
+            <button onclick="uploadAudio()">Upload Audio</button>
+            <span id="audioResult"></span>
+        </div>
+
     </div>
 
     <script>
@@ -156,6 +167,44 @@
 
             const plotData = [traceUpper, traceLower, traceMean, traceObs, traceAcq];
             Plotly.newPlot('plot', plotData, layout);
+        }
+
+
+        async function uploadFile(endpoint, inputId, resultId) {
+            const fileInput = document.getElementById(inputId);
+            if (!fileInput.files.length) {
+                alert("Please select a file first");
+                return;
+            }
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const resultSpan = document.getElementById(resultId);
+            resultSpan.innerText = "Uploading and computing...";
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                // data.obsY contains all the evaluated points
+                const lastVal = data.obsY[data.obsY.length - 1];
+                resultSpan.innerText = `Evaluated Value: ${lastVal.toFixed(2)} (Total observations: ${data.obsY.length})`;
+            } catch (err) {
+                console.error(err);
+                resultSpan.innerText = "Error uploading";
+            }
+        }
+
+        function uploadImage() {
+            uploadFile('/api/upload/image', 'imageInput', 'imageResult');
+        }
+
+        function uploadAudio() {
+            uploadFile('/api/upload/audio', 'audioInput', 'audioResult');
         }
 
         // Initial fetch
